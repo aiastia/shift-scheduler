@@ -15,10 +15,10 @@
         <button class="tab" :class="{ active: tab === 'table' }" @click="tab = 'table'">📊 表格视图</button>
         <button class="tab" :class="{ active: tab === 'swap' }" @click="tab = 'swap'">🔄 调休换班</button>
       </div>
-      <ConfigView v-if="tab === 'config'" @generated="tab = 'schedule'" />
-      <CalendarView v-if="tab === 'schedule'" />
-      <TableView v-if="tab === 'table'" />
-      <SwapView v-if="tab === 'swap'" />
+      <ConfigView v-show="tab === 'config'" @generated="tab = 'schedule'" />
+      <CalendarView v-show="tab === 'schedule'" />
+      <TableView v-show="tab === 'table'" />
+      <SwapView v-show="tab === 'swap'" />
     </div>
   </div>
 </template>

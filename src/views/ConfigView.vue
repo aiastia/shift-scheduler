@@ -20,7 +20,7 @@
         <p>暂无人员，请先添加值班人员</p>
       </div>
       <div v-else class="staff-list">
-        <template v-for="(members, g) in store.getGroups()" :key="g">
+        <template v-for="(members, g) in groupedStaff" :key="g">
           <div style="width:100%;margin-top:8px;font-size:12px;color:var(--text-light);font-weight:600;">{{ g }}组</div>
           <div v-for="s in members" :key="s.id" class="staff-tag" :class="'group-' + g.toLowerCase()">
             {{ s.name }}
@@ -128,6 +128,7 @@ const shiftDefaults = [
   { name: '夜班', start: '00:00', end: '08:00' },
 ]
 
+const groupedStaff = computed(() => store.getGroups())
 const colorCount = computed(() => store.config.mode === '24h' ? 1 : store.config.shiftCount)
 const colorLabel = (i) => store.config.mode === '24h' ? '值班' : (store.config.shifts[i]?.name || `班次${i + 1}`)
 
