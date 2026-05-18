@@ -1,0 +1,1620 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>智能排班系统</title>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<style>
+:root {
+  --primary: #4A90D9;
+  --primary-light: #E8F0FE;
+  --primary-dark: #3570B0;
+  --success: #52C41A;
+  --success-light: #F6FFED;
+  --warning: #FAAD14;
+  --warning-light: #FFFBE6;
+  --danger: #FF4D4F;
+  --danger-light: #FFF2F0;
+  --purple: #722ED1;
+  --purple-light: #F9F0FF;
+  --bg: #F0F2F5;
+  --card-bg: #FFFFFF;
+  --text: #333333;
+  --text-light: #888888;
+  --border: #E8E8E8;
+  --shadow: 0 2px 12px rgba(0,0,0,0.08);
+  --radius: 8px;
+  --shift-colors: #4A90D9, #52C41A, #FAAD14, #FF4D4F, #722ED1, #13C2C2;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+}
+/* Header */
+.header {
+  background: linear-gradient(135deg, #4A90D9, #2B5EA7);
+  color: white; padding: 14px 24px;
+  display: flex; align-items: center; justify-content: space-between;
+  box-shadow: 0 2px 8px rgba(74,144,217,0.4);
+  position: sticky; top: 0; z-index: 100;
+}
+.header h1 { font-size: 18px; font-weight: 600; letter-spacing: 1px; }
+.header-actions { display: flex; gap: 8px; }
+/* Buttons */
+.btn {
+  padding: 8px 16px; border: none; border-radius: 6px;
+  cursor: pointer; font-size: 13px; transition: all 0.2s;
+  display: inline-flex; align-items: center; gap: 4px; font-weight: 500;
+}
+.btn:hover { transform: translateY(-1px); box-shadow: 0 2px 6px rgba(0,0,0,0.15); }
+.btn-primary { background: var(--primary); color: white; }
+.btn-primary:hover { background: var(--primary-dark); }
+.btn-success { background: var(--success); color: white; }
+.btn-warning { background: var(--warning); color: white; }
+.btn-danger { background: var(--danger); color: white; }
+.btn-outline { background: white; color: var(--primary); border: 1px solid var(--primary); }
+.btn-white { background: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.3); }
+.btn-white:hover { background: rgba(255,255,255,0.3); }
+.btn-sm { padding: 4px 10px; font-size: 12px; }
+.btn-xs { padding: 2px 8px; font-size: 11px; }
+/* Container */
+.container { max-width: 1200px; margin: 0 auto; padding: 16px; }
+/* Tabs */
+.tabs {
+  display: flex; background: var(--card-bg); border-radius: var(--radius);
+  overflow: hidden; margin-bottom: 16px; box-shadow: var(--shadow);
+}
+.tab {
+  flex: 1; padding: 12px 8px; text-align: center; cursor: pointer;
+  border: none; background: transparent; font-size: 14px;
+  color: var(--text-light); transition: all 0.2s; border-bottom: 3px solid transparent;
+}
+.tab.active { color: var(--primary); border-bottom-color: var(--primary); font-weight: 600; background: var(--primary-light); }
+.tab:hover { background: var(--primary-light); }
+/* Cards */
+.card {
+  background: var(--card-bg); border-radius: var(--radius);
+  padding: 20px; box-shadow: var(--shadow); margin-bottom: 16px;
+}
+.card-title { font-size: 16px; font-weight: 600; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+/* Panels */
+.panel { display: none; }
+.panel.active { display: block; }
+/* Forms */
+.form-group { margin-bottom: 16px; }
+.form-group label { display: block; margin-bottom: 6px; font-weight: 500; font-size: 13px; color: var(--text-light); }
+.form-group input, .form-group select {
+  width: 100%; padding: 8px 12px; border: 1px solid var(--border);
+  border-radius: 6px; font-size: 14px; transition: border-color 0.2s;
+}
+.form-group input:focus, .form-group select:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(74,144,217,0.1); }
+.form-row { display: flex; gap: 12px; }
+.form-row .form-group { flex: 1; }
+/* Staff List */
+.staff-list { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.staff-tag {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 6px 12px; border-radius: 20px;
+  background: var(--primary-light); color: var(--primary);
+  font-size: 13px; font-weight: 500;
+}
+.staff-tag .remove {
+  cursor: pointer; width: 16px; height: 16px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 50%; background: rgba(74,144,217,0.2);
+  font-size: 10px; transition: all 0.2s;
+}
+.staff-tag .remove:hover { background: var(--danger); color: white; }
+.staff-tag.group-a { background: var(--primary-light); color: var(--primary); }
+.staff-tag.group-b { background: var(--success-light); color: var(--success); }
+.staff-tag.group-c { background: var(--warning-light); color: var(--warning); }
+.staff-tag.group-d { background: var(--purple-light); color: var(--purple); }
+/* Config Section */
+.config-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px; }
+.radio-group { display: flex; gap: 12px; flex-wrap: wrap; }
+.radio-item {
+  display: flex; align-items: center; gap: 6px;
+  padding: 8px 16px; border: 2px solid var(--border);
+  border-radius: 8px; cursor: pointer; transition: all 0.2s; font-size: 14px;
+}
+.radio-item:hover { border-color: var(--primary-light); }
+.radio-item.selected { border-color: var(--primary); background: var(--primary-light); color: var(--primary); font-weight: 500; }
+.radio-item input { display: none; }
+/* Calendar */
+.calendar-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 16px;
+}
+.calendar-header h3 { font-size: 18px; }
+.calendar-nav { display: flex; gap: 8px; align-items: center; }
+.calendar-table {
+  width: 100%; border-collapse: collapse; table-layout: fixed;
+}
+.calendar-table th {
+  padding: 10px 4px; text-align: center; font-size: 13px;
+  color: var(--text-light); background: #FAFAFA; border: 1px solid var(--border);
+}
+.calendar-table th:first-child { border-radius: 8px 0 0 0; }
+.calendar-table th:last-child { border-radius: 0 8px 0 0; }
+.calendar-table td {
+  border: 1px solid var(--border); padding: 4px; vertical-align: top;
+  min-height: 70px; cursor: pointer; transition: background 0.15s;
+  position: relative;
+}
+.calendar-table td:hover { background: var(--primary-light); }
+.calendar-table td.today { background: #FFF7E6; }
+.calendar-table td.other-month { opacity: 0.3; }
+.calendar-table td .day-num {
+  font-size: 12px; color: var(--text-light); font-weight: 500; margin-bottom: 2px;
+}
+.calendar-table td .shift-tag {
+  display: block; font-size: 10px; padding: 2px 4px; border-radius: 4px;
+  margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  color: white; font-weight: 500;
+}
+.calendar-table td .shift-tag.s0 { background: #4A90D9; }
+.calendar-table td .shift-tag.s1 { background: #52C41A; }
+.calendar-table td .shift-tag.s2 { background: #FAAD14; }
+.calendar-table td .shift-tag.s3 { background: #FF4D4F; }
+.calendar-table td .shift-tag.s4 { background: #722ED1; }
+.calendar-table td .shift-tag.s5 { background: #13C2C2; }
+.calendar-table td .swap-mark {
+  position: absolute; top: 2px; right: 2px;
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--danger);
+}
+/* Table View */
+.table-view { overflow-x: auto; }
+.schedule-table {
+  width: 100%; border-collapse: collapse; font-size: 13px;
+}
+.schedule-table th, .schedule-table td {
+  border: 1px solid var(--border); padding: 8px 6px; text-align: center;
+}
+.schedule-table th { background: #FAFAFA; font-weight: 600; color: var(--text-light); position: sticky; top: 0; }
+.schedule-table td { min-width: 60px; }
+.schedule-table .shift-cell { font-size: 11px; padding: 3px 6px; border-radius: 4px; color: white; font-weight: 500; display: inline-block; margin: 1px; }
+.schedule-table .shift-cell.s0 { background: #4A90D9; }
+.schedule-table .shift-cell.s1 { background: #52C41A; }
+.schedule-table .shift-cell.s2 { background: #FAAD14; }
+.schedule-table .shift-cell.s3 { background: #FF4D4F; }
+.schedule-table .shift-cell.s4 { background: #722ED1; }
+.schedule-table .shift-cell.s5 { background: #13C2C2; }
+.schedule-table .name-col { font-weight: 600; background: #FAFAFA; min-width: 80px; text-align: left; padding-left: 12px; }
+/* Modal */
+.modal-overlay {
+  display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.5); z-index: 200; align-items: center; justify-content: center;
+}
+.modal-overlay.active { display: flex; }
+.modal {
+  background: white; border-radius: 12px; padding: 24px;
+  max-width: 500px; width: 90%; max-height: 80vh; overflow-y: auto;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+}
+.modal h3 { margin-bottom: 16px; font-size: 16px; }
+.modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 20px; }
+/* Swap Records */
+.swap-record {
+  display: flex; align-items: center; padding: 12px;
+  border: 1px solid var(--border); border-radius: 8px; margin-bottom: 8px;
+  font-size: 13px; background: #FAFAFA;
+}
+.swap-record .swap-info { flex: 1; }
+.swap-record .swap-time { color: var(--text-light); font-size: 11px; margin-top: 4px; }
+.swap-record .swap-delete { cursor: pointer; color: var(--danger); margin-left: 12px; }
+/* Legend */
+.legend { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 12px; }
+.legend-item { display: flex; align-items: center; gap: 4px; font-size: 12px; }
+.legend-dot { width: 12px; height: 12px; border-radius: 3px; }
+/* Toast */
+.toast {
+  position: fixed; top: 80px; right: 20px; padding: 12px 20px;
+  border-radius: 8px; color: white; font-size: 14px;
+  z-index: 300; animation: slideIn 0.3s ease;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+}
+.toast.success { background: var(--success); }
+.toast.error { background: var(--danger); }
+.toast.info { background: var(--primary); }
+@keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+/* Print */
+@media print {
+  .header, .tabs, .calendar-header .btn, .no-print, .modal-overlay { display: none !important; }
+  body { background: white; }
+  .container { max-width: 100%; padding: 0; }
+  .card { box-shadow: none; border: 1px solid #ddd; page-break-inside: avoid; }
+  .calendar-table td { min-height: auto; }
+  .schedule-table th { background: #eee !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .shift-cell, .shift-tag { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  #panel-schedule .card:first-child { page-break-after: always; }
+  #statsCard { page-break-before: auto; }
+  @page { size: landscape; margin: 10mm; }
+}
+/* Responsive */
+@media (max-width: 768px) {
+  .header h1 { font-size: 16px; }
+  .container { padding: 8px; }
+  .card { padding: 12px; }
+  .form-row { flex-direction: column; gap: 0; }
+  .calendar-table td { padding: 2px; }
+  .calendar-table td .shift-tag { font-size: 9px; }
+  .modal { width: 95%; padding: 16px; }
+}
+/* Empty state */
+.empty-state { text-align: center; padding: 40px 20px; color: var(--text-light); }
+.empty-state .icon { font-size: 48px; margin-bottom: 12px; }
+.empty-state p { font-size: 14px; margin-bottom: 16px; }
+/* View toggle */
+.view-toggle { display: flex; gap: 4px; background: #F0F0F0; border-radius: 6px; padding: 2px; }
+.view-toggle button { padding: 6px 12px; border: none; background: transparent; border-radius: 4px; cursor: pointer; font-size: 12px; }
+.view-toggle button.active { background: white; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+/* Group tag */
+.group-select { padding: 4px 8px; border: 1px solid var(--border); border-radius: 4px; font-size: 12px; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>📅 智能排班系统</h1>
+  <div class="header-actions">
+    <button class="btn btn-white btn-sm" onclick="exportData()">📥 导出数据</button>
+    <button class="btn btn-white btn-sm" onclick="document.getElementById('importFile').click()">📤 导入数据</button>
+    <input type="file" id="importFile" accept=".json" style="display:none" onchange="importData(event)">
+  </div>
+</div>
+
+<div class="container">
+  <!-- Tabs -->
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('config')">⚙️ 排班配置</button>
+    <button class="tab" onclick="switchTab('schedule')">📅 排班日历</button>
+    <button class="tab" onclick="switchTab('table')">📊 表格视图</button>
+    <button class="tab" onclick="switchTab('swap')">🔄 调休换班</button>
+  </div>
+
+  <!-- Config Panel -->
+  <div class="panel active" id="panel-config">
+    <div class="card">
+      <div class="card-title">👥 人员管理</div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>添加人员</label>
+          <div style="display:flex;gap:8px;">
+            <input type="text" id="staffName" placeholder="输入姓名" onkeypress="if(event.key==='Enter')addStaff()">
+            <select id="staffGroup" class="group-select">
+              <option value="A">A组</option>
+              <option value="B">B组</option>
+              <option value="C">C组</option>
+              <option value="D">D组</option>
+            </select>
+            <button class="btn btn-primary btn-sm" onclick="addStaff()">添加</button>
+          </div>
+        </div>
+      </div>
+      <div style="margin-top:8px;font-size:13px;color:var(--text-light);">当前人员（按组划分）：</div>
+      <div id="staffList" class="staff-list"></div>
+      <div id="staffEmpty" class="empty-state" style="padding:20px;">
+        <p>暂无人员，请先添加值班人员</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">🕐 班次模式</div>
+      <div class="form-group">
+        <label>选择值班模式</label>
+        <div class="radio-group">
+          <div class="radio-item selected" onclick="selectMode('24h')" id="mode-24h">
+            <span>🕐 24小时值班</span>
+            <span style="font-size:11px;color:var(--text-light);">一人值一整天</span>
+          </div>
+          <div class="radio-item" onclick="selectMode('split')" id="mode-split">
+            <span>🕓 分时段值班</span>
+            <span style="font-size:11px;color:var(--text-light);">白班/中班/夜班</span>
+          </div>
+        </div>
+      </div>
+
+      <div id="splitConfig" style="display:none;">
+        <div class="form-group">
+          <label>班次划分</label>
+          <div class="radio-group">
+            <div class="radio-item selected" onclick="selectShiftCount(2)" id="shift-2">
+              <span>2班制</span>
+              <span style="font-size:11px;color:var(--text-light);">白班+夜班</span>
+            </div>
+            <div class="radio-item" onclick="selectShiftCount(3)" id="shift-3">
+              <span>3班制</span>
+              <span style="font-size:11px;color:var(--text-light);">白班+中班+夜班</span>
+            </div>
+          </div>
+        </div>
+        <div id="shiftTimeConfig"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">🔄 轮班规则</div>
+      <div style="margin-bottom:12px;padding:10px 14px;background:var(--primary-light);border-radius:8px;font-size:12px;color:var(--primary-dark);line-height:1.6;">
+        💡 <strong>排班逻辑：</strong><br>
+        • <strong>24小时模式</strong>：所有人按顺序轮流值班，不区分分组。如3人则上1休2，如每天需2人则前2人值1天后2人值1天<br>
+        • <strong>分时段模式</strong>：分组绑定班次。A组→白班、B组→夜班，每隔固定天数组间轮换班次
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>每组每班需要人数</label>
+          <input type="number" id="dailyNeed" min="1" max="10" value="1" style="width:100px;" onchange="updateRotationPreview()">
+        </div>
+        <div class="form-group">
+          <label>轮换周期（天）</label>
+          <input type="number" id="rotationDays" min="1" max="90" value="15" style="width:100px;" onchange="updateRotationPreview()">
+          <span style="font-size:11px;color:var(--text-light);margin-top:4px;display:block;">每隔几天组间轮换班次</span>
+        </div>
+        <div class="form-group">
+          <label>排班起始日期</label>
+          <input type="date" id="startDate">
+        </div>
+      </div>
+      <div id="rotationPreview" style="margin-top:12px;padding:12px;background:#FAFAFA;border-radius:8px;font-size:13px;color:var(--text-light);display:none;">
+      </div>
+      <div id="rotationTip" style="margin-top:8px;padding:8px 12px;background:var(--warning-light);border-radius:6px;font-size:12px;color:#D48806;display:none;">
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">🎨 颜色设置</div>
+      <div id="colorSettingsContent"></div>
+    </div>
+
+    <div style="text-align:center;margin:20px 0;">
+      <button class="btn btn-primary" onclick="generateSchedule()" style="padding:12px 40px;font-size:16px;">
+        🚀 一键生成排班
+      </button>
+    </div>
+  </div>
+
+  <!-- Calendar Panel -->
+  <div class="panel" id="panel-schedule">
+    <div class="card">
+      <div class="calendar-header">
+        <div class="calendar-nav">
+          <button class="btn btn-outline btn-sm" onclick="changeMonth(-1)">◀</button>
+          <h3 id="calendarTitle">2024年1月</h3>
+          <button class="btn btn-outline btn-sm" onclick="changeMonth(1)">▶</button>
+          <button class="btn btn-outline btn-sm" onclick="goToday()">今天</button>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <div id="legend" class="legend"></div>
+          <button class="btn btn-outline btn-sm" onclick="window.print()">🖨️ 打印</button>
+        </div>
+      </div>
+      <div id="calendarView"></div>
+    </div>
+    <div class="card" id="statsCard" style="display:none;">
+      <div class="card-title">📊 公平性统计（按月） <button class="btn btn-outline btn-xs" onclick="renderStats()">刷新</button></div>
+      <div id="statsContent"></div>
+    </div>
+  </div>
+
+  <!-- Table Panel -->
+  <div class="panel" id="panel-table">
+    <div class="card">
+      <div class="calendar-header">
+        <div class="calendar-nav">
+          <button class="btn btn-outline btn-sm" onclick="changeMonth(-1)">◀</button>
+          <h3 id="tableTitle">2024年1月</h3>
+          <button class="btn btn-outline btn-sm" onclick="changeMonth(1)">▶</button>
+        </div>
+        <div style="display:flex;gap:8px;">
+          <button class="btn btn-outline btn-sm" onclick="exportExcel()">📗 导出Excel</button>
+          <button class="btn btn-outline btn-sm" onclick="window.print()">🖨️ 打印</button>
+        </div>
+      </div>
+      <div class="table-view" id="tableView"></div>
+    </div>
+  </div>
+
+  <!-- Swap Panel -->
+  <div class="panel" id="panel-swap">
+    <div class="card">
+      <div class="card-title">🔄 调休 / 换班</div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>人员 A</label>
+          <select id="swapStaffA"><option value="">请选择</option></select>
+        </div>
+        <div class="form-group">
+          <label>A 的日期</label>
+          <input type="date" id="swapDateA">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>人员 B</label>
+          <select id="swapStaffB"><option value="">请选择</option></select>
+        </div>
+        <div class="form-group">
+          <label>B 的日期</label>
+          <input type="date" id="swapDateB">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>换班原因（可选）</label>
+        <input type="text" id="swapReason" placeholder="如：调休、家事等">
+      </div>
+      <div style="text-align:center;margin-top:16px;">
+        <button class="btn btn-warning" onclick="doSwap()">🔄 确认换班</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">🏖️ 请假 / 调休标记</div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>选择人员</label>
+          <select id="leaveStaff"><option value="">请选择</option></select>
+        </div>
+        <div class="form-group">
+          <label>请假日期</label>
+          <input type="date" id="leaveDate">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>原因</label>
+        <input type="text" id="leaveReason" placeholder="如：调休、病假、事假等">
+      </div>
+      <div style="text-align:center;margin-top:16px;">
+        <button class="btn btn-danger" onclick="markLeave()">🏖️ 标记请假/调休</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">📋 换班/请假记录</div>
+      <div id="swapRecords"></div>
+      <div id="swapEmpty" class="empty-state" style="padding:20px;">
+        <p>暂无换班记录</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Day Edit Modal -->
+<div class="modal-overlay" id="dayModal">
+  <div class="modal">
+    <h3 id="dayModalTitle">编辑排班</h3>
+    <div id="dayModalContent"></div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeModal('dayModal')">取消</button>
+      <button class="btn btn-primary" onclick="saveDayEdit()">保存</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ==================== Data Store ====================
+const STORAGE_KEY = 'shift_scheduler_data';
+const COLORS = ['#4A90D9','#52C41A','#FAAD14','#FF4D4F','#722ED1','#13C2C2'];
+
+let appData = {
+  staff: [],
+  config: {
+    mode: '24h',        // '24h' | 'split'
+    shiftCount: 2,      // for split mode: 2 or 3
+    shifts: [
+      { name: '白班', start: '08:00', end: '16:00' },
+      { name: '夜班', start: '16:00', end: '08:00' }
+    ],
+    dailyNeed: 1,       // 每组每班需要几人
+    rotationDays: 15,   // 每隔几天组间轮换
+    startDate: '',
+  },
+  schedule: {},
+  leaveRecords: {},   // { 'YYYY-MM-DD': { staffId: reason } }
+  swapRecords: [],
+  currentMonth: new Date().getFullYear() + '-' + String(new Date().getMonth()+1).padStart(2,'0'),
+};
+
+let editingDate = null;
+
+// ==================== Persistence ====================
+function saveData() {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(appData));
+  } catch(e) {
+    console.error('Save failed:', e);
+  }
+}
+
+function loadData() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      appData = { ...appData, ...parsed };
+      // ensure nested objects
+      appData.config = { ...appData.config, ...(parsed.config || {}) };
+    }
+  } catch(e) {
+    console.error('Load failed:', e);
+  }
+}
+
+// ==================== Toast ====================
+function showToast(msg, type='info') {
+  const t = document.createElement('div');
+  t.className = 'toast ' + type;
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => { t.style.opacity = '0'; t.style.transition = 'opacity 0.3s'; setTimeout(() => t.remove(), 300); }, 2500);
+}
+
+// ==================== Staff Management ====================
+function addStaff() {
+  const nameInput = document.getElementById('staffName');
+  const groupSelect = document.getElementById('staffGroup');
+  const name = nameInput.value.trim();
+  if (!name) { showToast('请输入姓名', 'error'); return; }
+  if (appData.staff.some(s => s.name === name)) { showToast('姓名已存在', 'error'); return; }
+  appData.staff.push({ id: Date.now().toString(), name, group: groupSelect.value });
+  nameInput.value = '';
+  saveData();
+  renderStaffList();
+  updateSwapStaffOptions();
+  updateRotationPreview();
+  showToast('已添加: ' + name, 'success');
+}
+
+function removeStaff(id) {
+  const s = appData.staff.find(s => s.id === id);
+  appData.staff = appData.staff.filter(s => s.id !== id);
+  saveData();
+  renderStaffList();
+  updateSwapStaffOptions();
+  updateRotationPreview();
+  if (s) showToast('已移除: ' + s.name, 'info');
+}
+
+function renderStaffList() {
+  const container = document.getElementById('staffList');
+  const empty = document.getElementById('staffEmpty');
+  if (appData.staff.length === 0) {
+    container.innerHTML = '';
+    empty.style.display = 'block';
+    return;
+  }
+  empty.style.display = 'none';
+  const groups = { A: [], B: [], C: [], D: [] };
+  appData.staff.forEach(s => {
+    const g = s.group || 'A';
+    if (!groups[g]) groups[g] = [];
+    groups[g].push(s);
+  });
+  let html = '';
+  Object.keys(groups).forEach(g => {
+    if (groups[g].length === 0) return;
+    html += `<div style="width:100%;margin-top:8px;font-size:12px;color:var(--text-light);font-weight:600;">${g}组</div>`;
+    groups[g].forEach(s => {
+      html += `<div class="staff-tag group-${g.toLowerCase()}">${s.name}<span class="remove" onclick="removeStaff('${s.id}')">✕</span></div>`;
+    });
+  });
+  container.innerHTML = html;
+}
+
+// ==================== Config ====================
+function selectMode(mode) {
+  appData.config.mode = mode;
+  document.getElementById('mode-24h').classList.toggle('selected', mode === '24h');
+  document.getElementById('mode-split').classList.toggle('selected', mode === 'split');
+  document.getElementById('splitConfig').style.display = mode === 'split' ? 'block' : 'none';
+  updateShiftTimeConfig();
+  updateRotationPreview();
+  renderColorSettings();
+  saveData();
+}
+
+function selectShiftCount(count) {
+  appData.config.shiftCount = count;
+  document.getElementById('shift-2').classList.toggle('selected', count === 2);
+  document.getElementById('shift-3').classList.toggle('selected', count === 3);
+  updateShiftTimeConfig();
+  renderColorSettings();
+  saveData();
+}
+
+function updateShiftTimeConfig() {
+  const container = document.getElementById('shiftTimeConfig');
+  const count = appData.config.shiftCount;
+  const defaults = [
+    { name: '白班', start: '08:00', end: '16:00' },
+    { name: '中班', start: '16:00', end: '00:00' },
+    { name: '夜班', start: '00:00', end: '08:00' },
+  ];
+  let html = '';
+  for (let i = 0; i < count; i++) {
+    const d = defaults[i];
+    html += `<div class="form-row" style="margin-bottom:8px;align-items:center;">
+      <span style="font-size:13px;font-weight:500;min-width:60px;">班次${i+1}</span>
+      <input type="text" class="shift-name-input" data-idx="${i}" value="${d.name}" style="width:80px;padding:4px 8px;border:1px solid var(--border);border-radius:4px;font-size:13px;">
+      <input type="time" class="shift-start-input" data-idx="${i}" value="${d.start}" style="width:100px;padding:4px 8px;border:1px solid var(--border);border-radius:4px;font-size:13px;">
+      <span style="font-size:12px;">至</span>
+      <input type="time" class="shift-end-input" data-idx="${i}" value="${d.end}" style="width:100px;padding:4px 8px;border:1px solid var(--border);border-radius:4px;font-size:13px;">
+    </div>`;
+  }
+  container.innerHTML = html;
+}
+
+function readShiftConfig() {
+  const names = document.querySelectorAll('.shift-name-input');
+  const starts = document.querySelectorAll('.shift-start-input');
+  const ends = document.querySelectorAll('.shift-end-input');
+  const shifts = [];
+  names.forEach((el, i) => {
+    shifts.push({ name: el.value || `班次${i+1}`, start: starts[i].value, end: ends[i].value });
+  });
+  return shifts;
+}
+
+// ==================== Rotation Preview ====================
+function getGroups() {
+  const groups = {};
+  appData.staff.forEach(s => {
+    const g = s.group || 'A';
+    if (!groups[g]) groups[g] = [];
+    groups[g].push(s);
+  });
+  return groups;
+}
+
+function updateRotationPreview() {
+  const dailyNeed = parseInt(document.getElementById('dailyNeed').value) || 1;
+  const rotationDays = parseInt(document.getElementById('rotationDays').value) || 15;
+  appData.config.dailyNeed = dailyNeed;
+  appData.config.rotationDays = rotationDays;
+  const staffCount = appData.staff.length;
+  const mode = appData.config.mode;
+  const shiftCount = mode === 'split' ? appData.config.shiftCount : 1;
+  const preview = document.getElementById('rotationPreview');
+  const tip = document.getElementById('rotationTip');
+
+  if (staffCount === 0) {
+    preview.style.display = 'none';
+    tip.style.display = 'none';
+    return;
+  }
+
+  const groups = getGroups();
+  const groupKeys = Object.keys(groups).sort();
+  const numGroups = groupKeys.length;
+
+  let desc = `<strong>📋 排班规则预览：</strong><br>`;
+  desc += `👥 共 <strong>${staffCount}</strong> 人 | `;
+
+  if (mode === '24h') {
+    const cycleLen = Math.ceil(staffCount / dailyNeed);
+    const restDays = cycleLen - 1;
+    desc += `🕐 24小时值班 | 📊 每天 <strong>${dailyNeed}</strong> 人值班<br>`;
+    desc += `🔄 轮转周期：<strong>${cycleLen}</strong> 天一轮回（上 <strong>1</strong> 天休 <strong>${restDays}</strong> 天）<br>`;
+    desc += `　（所有人不分分组，按顺序轮流值班）<br>`;
+
+    // Show example
+    const names = appData.staff.map(s => s.name);
+    desc += `<br><strong>排班示例：</strong><br>`;
+    for (let i = 0; i < Math.min(cycleLen + 1, 8); i++) {
+      const assigned = [];
+      for (let slot = 0; slot < dailyNeed; slot++) {
+        const idx = (i * dailyNeed + slot) % staffCount;
+        assigned.push(names[idx]);
+      }
+      desc += `　第${i+1}天：<strong>${assigned.join('、')}</strong> 值班<br>`;
+    }
+
+    if (staffCount < dailyNeed) {
+      desc += `<br><span style="color:var(--danger);">⚠️ 人员不足！每天需要 ${dailyNeed} 人，但只有 ${staffCount} 人</span>`;
+    }
+  } else {
+    const shiftNames = appData.config.shifts.map(s => s.name).join('、');
+    const totalShifts = shiftCount;
+    desc += `🕓 分时段（${shiftNames}） | 📊 每班 <strong>${dailyNeed}</strong> 人<br>`;
+    desc += `🔄 轮换周期：每 <strong>${rotationDays}</strong> 天组间轮换班次<br>`;
+
+    desc += `<br><strong>班次分配（起始）：</strong><br>`;
+    groupKeys.forEach((g, i) => {
+      const shiftIdx = i % totalShifts;
+      const shiftName = appData.config.shifts[shiftIdx]?.name || `班${shiftIdx+1}`;
+      const members = groups[g].map(s => s.name).join('、');
+      desc += `　${g}组 → <span style="color:${COLORS[shiftIdx]};font-weight:600;">${shiftName}</span>（${members}）<br>`;
+    });
+
+    if (numGroups >= 2) {
+      desc += `<br><strong>轮换计划：</strong><br>`;
+      const periods = Math.ceil(60 / rotationDays);
+      for (let p = 0; p < Math.min(periods, 4); p++) {
+        const startD = p * rotationDays + 1;
+        const endD = (p + 1) * rotationDays;
+        desc += `　第${startD}-${endD}天：`;
+        groupKeys.forEach((g, i) => {
+          const shiftIdx = (i + p) % totalShifts;
+          const shiftName = appData.config.shifts[shiftIdx]?.name || `班${shiftIdx+1}`;
+          desc += `${g}组=${shiftName} `;
+        });
+        desc += `<br>`;
+      }
+    }
+  }
+
+  // Warnings
+  const warnings = [];
+  if (mode === 'split') {
+    const totalShifts = shiftCount;
+    if (numGroups < totalShifts) {
+      warnings.push(`班次有 ${totalShifts} 个但只有 ${numGroups} 个组，建议组数≥班次数`);
+    }
+    groupKeys.forEach(g => {
+      if (groups[g].length < dailyNeed) {
+        warnings.push(`${g}组只有 ${groups[g].length} 人，不足每班 ${dailyNeed} 人`);
+      }
+    });
+  }
+
+  preview.innerHTML = desc;
+  preview.style.display = 'block';
+  if (warnings.length > 0) {
+    tip.innerHTML = warnings.map(w => `⚠️ ${w}`).join('<br>');
+    tip.style.display = 'block';
+  } else {
+    tip.style.display = 'none';
+  }
+  saveData();
+}
+
+// ==================== Schedule Generation ====================
+function generateSchedule() {
+  if (appData.staff.length === 0) {
+    showToast('请先添加人员', 'error');
+    return;
+  }
+  // Read config
+  if (appData.config.mode === 'split') {
+    appData.config.shifts = readShiftConfig();
+  }
+  appData.config.dailyNeed = parseInt(document.getElementById('dailyNeed').value) || 1;
+  appData.config.rotationDays = parseInt(document.getElementById('rotationDays').value) || 15;
+  const startDate = document.getElementById('startDate').value;
+  if (!startDate) {
+    showToast('请设置起始日期', 'error');
+    return;
+  }
+  appData.config.startDate = startDate;
+
+  const dailyNeed = appData.config.dailyNeed;
+  const rotationDays = appData.config.rotationDays;
+  const mode = appData.config.mode;
+  const totalShifts = mode === 'split' ? appData.config.shiftCount : 1;
+
+  // Group staff
+  const groups = getGroups();
+  const groupKeys = Object.keys(groups).sort();
+  const numGroups = groupKeys.length;
+
+  if (numGroups === 0) { showToast('请先添加人员', 'error'); return; }
+
+  // For 24h mode: each period, each group takes turns being "on duty"
+  // For split mode: each period, groups rotate which shift they work
+  // Generate 3 months (about 92-93 days)
+  const start = new Date(startDate + 'T00:00:00');
+  const end = new Date(start);
+  end.setMonth(end.getMonth() + 3); // exactly 3 months later
+  const totalDays = Math.ceil((end - start) / (1000 * 60 * 60 * 24));
+  const newSchedule = {};
+
+  for (let d = 0; d < totalDays; d++) {
+    const date = new Date(start);
+    date.setDate(date.getDate() + d);
+    const dateStr = formatDate(date);
+    newSchedule[dateStr] = {};
+
+    // Which rotation period are we in?
+    const period = Math.floor(d / rotationDays);
+
+    if (mode === '24h') {
+      // 24h mode: IGNORE groups, all staff in one pool, simple rotation
+      // 3 people, need 1/day → person[0], person[1], person[2], person[0]... (上1休2)
+      // 4 people, need 2/day → [0,1], [2,3], [0,1]... (上1休1)
+      // 6 people, need 2/day → [0,1], [2,3], [4,5], [0,1]... (上1休2)
+      const allStaff = appData.staff; // use original order
+      const n = allStaff.length;
+      const slotsPerDay = Math.min(dailyNeed, n);
+
+      // Each day's starting index in the rotation
+      const startIdx = (d * slotsPerDay) % n;
+      for (let slot = 0; slot < slotsPerDay; slot++) {
+        const idx = (startIdx + slot) % n;
+        newSchedule[dateStr][allStaff[idx].id] = 0;
+      }
+    } else {
+      // Split mode: assign each group to a shift, rotate every `rotationDays`
+      for (let si = 0; si < totalShifts; si++) {
+        // Which group handles this shift in this period?
+        const groupIdx = (si + period) % numGroups;
+        const g = groupKeys[groupIdx];
+        const members = groups[g] || [];
+
+        // Pick `dailyNeed` members from this group for this shift
+        for (let slot = 0; slot < Math.min(dailyNeed, members.length); slot++) {
+          const memberIdx = (d + slot) % members.length;
+          const person = members[memberIdx];
+          if (!newSchedule[dateStr][person.id]) {
+            newSchedule[dateStr][person.id] = [];
+          }
+          newSchedule[dateStr][person.id].push(si);
+        }
+      }
+    }
+  }
+
+  appData.schedule = newSchedule;
+  saveData();
+  showToast('排班已生成！', 'success');
+  renderStats();
+  switchTab('schedule');
+  renderCalendar();
+}
+
+// ==================== Calendar Rendering ====================
+function formatDate(d) {
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+}
+
+function changeMonth(delta) {
+  const [y, m] = appData.currentMonth.split('-').map(Number);
+  const d = new Date(y, m - 1 + delta, 1);
+  appData.currentMonth = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
+  renderCalendar();
+  renderTableView();
+}
+
+function goToday() {
+  const now = new Date();
+  appData.currentMonth = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0');
+  renderCalendar();
+  renderTableView();
+}
+
+function renderCalendar() {
+  const [year, month] = appData.currentMonth.split('-').map(Number);
+  const title = `${year}年${month}月`;
+  document.getElementById('calendarTitle').textContent = title;
+  document.getElementById('tableTitle').textContent = title;
+
+  const firstDay = new Date(year, month - 1, 1);
+  const lastDay = new Date(year, month, 0);
+  const daysInMonth = lastDay.getDate();
+  let startWeekday = firstDay.getDay(); // 0=Sun
+  if (startWeekday === 0) startWeekday = 7; // Make Monday=1
+
+  const today = formatDate(new Date());
+  const dayNames = ['一','二','三','四','五','六','日'];
+
+  let html = '<table class="calendar-table"><thead><tr>';
+  dayNames.forEach(n => html += `<th>${n}</th>`);
+  html += '</tr></thead><tbody>';
+
+  // Previous month fill
+  const prevMonth = new Date(year, month - 1, 0);
+  let day = 1;
+  let cells = [];
+
+  // Add empty cells for days before month starts (Monday=1)
+  for (let i = 1; i < startWeekday; i++) {
+    const pd = prevMonth.getDate() - startWeekday + i + 1;
+    cells.push({ day: pd, otherMonth: true });
+  }
+
+  // This month days
+  for (let d = 1; d <= daysInMonth; d++) {
+    cells.push({ day: d, otherMonth: false });
+  }
+
+  // Next month fill
+  while (cells.length % 7 !== 0) {
+    cells.push({ day: cells.length - daysInMonth - startWeekday + 2, otherMonth: true });
+  }
+
+  cells.forEach((cell, idx) => {
+    if (idx % 7 === 0) html += '<tr>';
+    const dateStr = cell.otherMonth ? '' :
+      `${year}-${String(month).padStart(2,'0')}-${String(cell.day).padStart(2,'0')}`;
+    const isToday = dateStr === today;
+    const cls = [isToday ? 'today' : '', cell.otherMonth ? 'other-month' : ''].filter(Boolean).join(' ');
+
+    html += `<td class="${cls}" ${dateStr ? `onclick="openDayEdit('${dateStr}')"` : ''}>`;
+    html += `<div class="day-num">${cell.day}</div>`;
+
+    if (dateStr && appData.schedule[dateStr]) {
+      const daySchedule = appData.schedule[dateStr];
+      // Check if any swap affects this day
+      const hasSwap = appData.swapRecords.some(r =>
+        (r.dateA === dateStr || r.dateB === dateStr));
+
+      Object.keys(daySchedule).forEach(staffId => {
+        const person = appData.staff.find(s => s.id === staffId);
+        if (!person) return;
+        const shiftVal = daySchedule[staffId];
+        if (appData.config.mode === '24h') {
+          html += `<div class="shift-tag s0">📊 ${person.name}</div>`;
+        } else {
+          if (Array.isArray(shiftVal)) {
+            shiftVal.forEach(si => {
+              const sName = (appData.config.shifts[si] && appData.config.shifts[si].name) || `班${si}`;
+              html += `<div class="shift-tag s${si}">${sName}:${person.name}</div>`;
+            });
+          }
+        }
+      });
+      // Show leave records for this day
+      const leaveData = appData.leaveRecords[dateStr] || {};
+      Object.keys(leaveData).forEach(staffId => {
+        const person = appData.staff.find(s => s.id === staffId);
+        if (!person) return;
+        html += `<div style="display:block;font-size:10px;padding:2px 4px;border-radius:4px;margin-bottom:2px;background:#999;color:white;font-weight:500;text-decoration:line-through;">🏖️ ${person.name}（${leaveData[staffId]}）</div>`;
+      });
+      if (hasSwap) html += '<div class="swap-mark"></div>';
+    }
+    // Also show leave records even if no schedule for this day
+    if (dateStr && !appData.schedule[dateStr] && appData.leaveRecords[dateStr]) {
+      const leaveData = appData.leaveRecords[dateStr] || {};
+      Object.keys(leaveData).forEach(staffId => {
+        const person = appData.staff.find(s => s.id === staffId);
+        if (!person) return;
+        html += `<div style="display:block;font-size:10px;padding:2px 4px;border-radius:4px;margin-bottom:2px;background:#999;color:white;font-weight:500;text-decoration:line-through;">🏖️ ${person.name}（${leaveData[staffId]}）</div>`;
+      });
+    }
+    html += '</td>';
+    if (idx % 7 === 6) html += '</tr>';
+  });
+
+  html += '</tbody></table>';
+  document.getElementById('calendarView').innerHTML = html;
+  renderLegend();
+  renderTableView();
+}
+
+function renderLegend() {
+  const container = document.getElementById('legend');
+  let html = '';
+  if (appData.config.mode === '24h') {
+    html = '<div class="legend-item"><div class="legend-dot" style="background:#4A90D9;"></div>全天值班</div>';
+  } else {
+    (appData.config.shifts || []).forEach((s, i) => {
+      html += `<div class="legend-item"><div class="legend-dot" style="background:${COLORS[i]};"></div>${s.name} ${s.start}-${s.end}</div>`;
+    });
+  }
+  html += '<div class="legend-item"><div class="legend-dot" style="background:var(--danger);width:8px;height:8px;border-radius:50%;"></div>有换班</div>';
+  container.innerHTML = html;
+}
+
+// ==================== Table View ====================
+function renderTableView() {
+  const [year, month] = appData.currentMonth.split('-').map(Number);
+  const daysInMonth = new Date(year, month, 0).getDate();
+  const staff = appData.staff;
+
+  if (staff.length === 0) {
+    document.getElementById('tableView').innerHTML = '<div class="empty-state"><p>暂无排班数据，请先配置并生成排班</p></div>';
+    return;
+  }
+
+  let html = '<table class="schedule-table"><thead><tr><th class="name-col">姓名</th>';
+  for (let d = 1; d <= daysInMonth; d++) {
+    const dateStr = `${year}-${String(month).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const weekday = ['日','一','二','三','四','五','六'][new Date(dateStr).getDay()];
+    const isWeekend = new Date(dateStr).getDay() === 0 || new Date(dateStr).getDay() === 6;
+    html += `<th style="${isWeekend ? 'color:var(--danger);' : ''}">${d}<br><span style="font-size:10px;font-weight:400;">${weekday}</span></th>`;
+  }
+  html += '</tr></thead><tbody>';
+
+  staff.forEach(person => {
+    html += `<tr><td class="name-col">${person.name}</td>`;
+    for (let d = 1; d <= daysInMonth; d++) {
+      const dateStr = `${year}-${String(month).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+      const dayData = appData.schedule[dateStr];
+      html += '<td>';
+      // Check leave record first
+      const leaveData = appData.leaveRecords[dateStr];
+      if (leaveData && leaveData[person.id]) {
+        html += `<span style="font-size:11px;padding:3px 6px;border-radius:4px;background:#999;color:white;font-weight:500;text-decoration:line-through;">${leaveData[person.id]}</span>`;
+      } else if (dayData && dayData[person.id] !== undefined) {
+        const shiftVal = dayData[person.id];
+        if (appData.config.mode === '24h') {
+          html += '<span class="shift-cell s0">值班</span>';
+        } else if (Array.isArray(shiftVal)) {
+          shiftVal.forEach(si => {
+            const sName = (appData.config.shifts[si] && appData.config.shifts[si].name) || `${si}`;
+            html += `<span class="shift-cell s${si}">${sName}</span>`;
+          });
+        }
+      }
+      html += '</td>';
+    }
+    html += '</tr>';
+  });
+
+  html += '</tbody></table>';
+  document.getElementById('tableView').innerHTML = html;
+}
+
+// ==================== Day Edit Modal ====================
+function openDayEdit(dateStr) {
+  editingDate = dateStr;
+  const [y, m, d] = dateStr.split('-');
+  document.getElementById('dayModalTitle').textContent = `编辑排班 - ${parseInt(m)}月${parseInt(d)}日`;
+
+  const dayData = appData.schedule[dateStr] || {};
+  const container = document.getElementById('dayModalContent');
+  let html = '';
+
+  appData.staff.forEach(person => {
+    const assigned = dayData[person.id];
+    html += `<div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--border);">
+      <span style="min-width:80px;font-weight:500;">${person.name}</span>`;
+
+    if (appData.config.mode === '24h') {
+      const checked = assigned === 0 || assigned === '0' ? 'checked' : '';
+      html += `<label style="display:flex;align-items:center;gap:4px;font-size:13px;">
+        <input type="checkbox" class="day-edit-cb" data-staff="${person.id}" ${checked}> 值班</label>`;
+    } else {
+      (appData.config.shifts || []).forEach((shift, si) => {
+        const checked = Array.isArray(assigned) && assigned.includes(si) ? 'checked' : '';
+        html += `<label style="display:flex;align-items:center;gap:4px;font-size:12px;">
+          <input type="checkbox" class="day-edit-cb" data-staff="${person.id}" data-shift="${si}" ${checked}> ${shift.name}</label>`;
+      });
+    }
+    html += '</div>';
+  });
+
+  container.innerHTML = html;
+  document.getElementById('dayModal').classList.add('active');
+}
+
+function saveDayEdit() {
+  if (!editingDate) return;
+  if (!appData.schedule[editingDate]) appData.schedule[editingDate] = {};
+
+  const checkboxes = document.querySelectorAll('.day-edit-cb');
+  const assignments = {};
+
+  checkboxes.forEach(cb => {
+    const staffId = cb.dataset.staff;
+    const shiftIdx = cb.dataset.shift !== undefined ? parseInt(cb.dataset.shift) : 0;
+    if (cb.checked) {
+      if (!assignments[staffId]) assignments[staffId] = [];
+      assignments[staffId].push(shiftIdx);
+    }
+  });
+
+  // Convert to proper format
+  Object.keys(assignments).forEach(sid => {
+    if (appData.config.mode === '24h') {
+      appData.schedule[editingDate][sid] = 0;
+    } else {
+      appData.schedule[editingDate][sid] = assignments[sid];
+    }
+  });
+
+  // Remove unchecked staff
+  appData.staff.forEach(s => {
+    if (!assignments[s.id]) {
+      delete appData.schedule[editingDate][s.id];
+    }
+  });
+
+  saveData();
+  closeModal('dayModal');
+  renderCalendar();
+  showToast('排班已更新', 'success');
+}
+
+function closeModal(id) {
+  document.getElementById(id).classList.remove('active');
+}
+
+// Close modal on overlay click
+document.querySelectorAll('.modal-overlay').forEach(overlay => {
+  overlay.addEventListener('click', e => {
+    if (e.target === overlay) overlay.classList.remove('active');
+  });
+});
+
+// ==================== Swap ====================
+function updateSwapStaffOptions() {
+  const opts = '<option value="">请选择</option>' +
+    appData.staff.map(s => `<option value="${s.id}">${s.name}（${s.group}组）</option>`).join('');
+  document.getElementById('swapStaffA').innerHTML = opts;
+  document.getElementById('swapStaffB').innerHTML = opts;
+  const leaveEl = document.getElementById('leaveStaff');
+  if (leaveEl) leaveEl.innerHTML = opts;
+}
+
+// ==================== Leave / 调休 ====================
+function markLeave() {
+  const staffId = document.getElementById('leaveStaff').value;
+  const date = document.getElementById('leaveDate').value;
+  const reason = document.getElementById('leaveReason').value.trim() || '调休';
+
+  if (!staffId || !date) {
+    showToast('请选择人员和日期', 'error');
+    return;
+  }
+
+  // Remove from schedule on that day
+  if (!appData.schedule[date]) appData.schedule[date] = {};
+  delete appData.schedule[date][staffId];
+
+  // Save leave record
+  if (!appData.leaveRecords) appData.leaveRecords = {};
+  if (!appData.leaveRecords[date]) appData.leaveRecords[date] = {};
+  appData.leaveRecords[date][staffId] = reason;
+
+  const person = appData.staff.find(s => s.id === staffId);
+  saveData();
+  renderCalendar();
+
+  // Add to swap records for tracking
+  const record = {
+    id: Date.now().toString(),
+    type: 'leave',
+    staffA: staffId,
+    staffAName: person?.name || '未知',
+    dateA: date,
+    reason,
+    time: new Date().toLocaleString('zh-CN'),
+  };
+  appData.swapRecords.unshift(record);
+  renderSwapRecords();
+
+  // Clear form
+  document.getElementById('leaveStaff').value = '';
+  document.getElementById('leaveDate').value = '';
+  document.getElementById('leaveReason').value = '';
+
+  showToast(`${person?.name || ''} 已标记 ${date} 为${reason}`, 'success');
+}
+
+function doSwap() {
+  const staffA = document.getElementById('swapStaffA').value;
+  const staffB = document.getElementById('swapStaffB').value;
+  const dateA = document.getElementById('swapDateA').value;
+  const dateB = document.getElementById('swapDateB').value;
+  const reason = document.getElementById('swapReason').value.trim();
+
+  if (!staffA || !staffB || !dateA || !dateB) {
+    showToast('请完整填写换班信息', 'error');
+    return;
+  }
+  if (staffA === staffB && dateA === dateB) {
+    showToast('不能与自己同一天换班', 'error');
+    return;
+  }
+
+  // Ensure schedule entries exist
+  if (!appData.schedule[dateA]) appData.schedule[dateA] = {};
+  if (!appData.schedule[dateB]) appData.schedule[dateB] = {};
+
+  // Swap the shift assignments
+  const tempA = appData.schedule[dateA][staffA];
+  const tempB = appData.schedule[dateB][staffB];
+
+  if (tempA !== undefined) {
+    appData.schedule[dateB][staffA] = tempA;
+  } else {
+    delete appData.schedule[dateB][staffA];
+  }
+  if (tempB !== undefined) {
+    appData.schedule[dateA][staffB] = tempB;
+  } else {
+    delete appData.schedule[dateA][staffB];
+  }
+
+  // Remove original assignments
+  delete appData.schedule[dateA][staffA];
+  delete appData.schedule[dateB][staffB];
+
+  // Record the swap independently
+  const record = {
+    id: Date.now().toString(),
+    staffA, staffB, dateA, dateB,
+    reason: reason || '未填写',
+    time: new Date().toLocaleString('zh-CN'),
+    staffAName: appData.staff.find(s => s.id === staffA)?.name || '未知',
+    staffBName: appData.staff.find(s => s.id === staffB)?.name || '未知',
+  };
+  appData.swapRecords.unshift(record);
+
+  saveData();
+  renderSwapRecords();
+  renderCalendar();
+
+  // Clear form
+  document.getElementById('swapStaffA').value = '';
+  document.getElementById('swapStaffB').value = '';
+  document.getElementById('swapDateA').value = '';
+  document.getElementById('swapDateB').value = '';
+  document.getElementById('swapReason').value = '';
+
+  showToast('换班成功！', 'success');
+}
+
+function deleteSwapRecord(id) {
+  const record = appData.swapRecords.find(r => r.id === id);
+  if (!record) return;
+
+  if (record.type === 'leave') {
+    // Restore: remove leave record, regenerate schedule for that date
+    if (appData.leaveRecords[record.dateA]) {
+      delete appData.leaveRecords[record.dateA][record.staffA];
+      if (Object.keys(appData.leaveRecords[record.dateA]).length === 0) {
+        delete appData.leaveRecords[record.dateA];
+      }
+    }
+    showToast(`已撤销 ${record.staffAName} 的请假记录，请重新生成排班`, 'info');
+  } else {
+    // Swap back: reverse the swap
+    if (record.staffA && record.staffB && record.dateA && record.dateB) {
+      if (!appData.schedule[record.dateA]) appData.schedule[record.dateA] = {};
+      if (!appData.schedule[record.dateB]) appData.schedule[record.dateB] = {};
+
+      const tempA = appData.schedule[record.dateA][record.staffB];
+      const tempB = appData.schedule[record.dateB][record.staffA];
+
+      // Swap back
+      if (tempB !== undefined) appData.schedule[record.dateA][record.staffA] = tempB;
+      else delete appData.schedule[record.dateA][record.staffA];
+
+      if (tempA !== undefined) appData.schedule[record.dateB][record.staffB] = tempA;
+      else delete appData.schedule[record.dateB][record.staffB];
+
+      delete appData.schedule[record.dateA][record.staffB];
+      delete appData.schedule[record.dateB][record.staffA];
+    }
+    showToast(`已撤销 ${record.staffAName} ↔ ${record.staffBName} 的换班`, 'info');
+  }
+
+  appData.swapRecords = appData.swapRecords.filter(r => r.id !== id);
+  saveData();
+  renderSwapRecords();
+  renderCalendar();
+}
+
+function renderSwapRecords() {
+  const container = document.getElementById('swapRecords');
+  const empty = document.getElementById('swapEmpty');
+  if (appData.swapRecords.length === 0) {
+    container.innerHTML = '';
+    empty.style.display = 'block';
+    return;
+  }
+  empty.style.display = 'none';
+  container.innerHTML = appData.swapRecords.map(r => {
+    if (r.type === 'leave') {
+      return `<div class="swap-record" style="border-left:3px solid var(--warning);">
+        <div class="swap-info">
+          <div>🏖️ <strong>${r.staffAName}</strong>（${r.dateA}）<span style="color:var(--warning);font-weight:600;">请假/调休</span></div>
+          <div style="font-size:12px;color:var(--text-light);margin-top:2px;">原因：${r.reason}</div>
+          <div class="swap-time">${r.time}</div>
+        </div>
+        <span class="swap-delete" onclick="deleteSwapRecord('${r.id}')">🗑️</span>
+      </div>`;
+    }
+    return `<div class="swap-record" style="border-left:3px solid var(--primary);">
+      <div class="swap-info">
+        <div>🔄 <strong>${r.staffAName}</strong>（${r.dateA}） ↔ <strong>${r.staffBName}</strong>（${r.dateB}）</div>
+        <div style="font-size:12px;color:var(--text-light);margin-top:2px;">原因：${r.reason}</div>
+        <div class="swap-time">${r.time}</div>
+      </div>
+      <span class="swap-delete" onclick="deleteSwapRecord('${r.id}')">🗑️</span>
+    </div>`;
+  }).join('');
+}
+
+// ==================== Export / Import ====================
+function exportData() {
+  const blob = new Blob([JSON.stringify(appData, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `排班数据_${appData.currentMonth}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('数据已导出', 'success');
+}
+
+function importData(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const data = JSON.parse(e.target.result);
+      appData = { ...appData, ...data };
+      appData.config = { ...appData.config, ...(data.config || {}) };
+      saveData();
+      initUI();
+      showToast('数据导入成功', 'success');
+    } catch(err) {
+      showToast('导入失败：文件格式错误', 'error');
+    }
+  };
+  reader.readAsText(file);
+  event.target.value = '';
+}
+
+function exportAsImage() {
+  showToast('正在生成图片，请稍候...', 'info');
+  const tableEl = document.querySelector('.schedule-table');
+  if (!tableEl) { showToast('没有可导出的表格', 'error'); return; }
+
+  // Use simple canvas approach
+  const canvas = document.createElement('canvas');
+  const width = tableEl.offsetWidth;
+  const height = tableEl.offsetHeight;
+  const scale = 2;
+  canvas.width = width * scale;
+  canvas.height = height * scale;
+
+  // For better export, recommend using print to PDF
+  // Fallback: use print
+  showToast('建议使用浏览器打印功能导出PDF（Ctrl+P）', 'info');
+  window.print();
+}
+
+// ==================== Excel Export ====================
+function exportExcel() {
+  if (typeof XLSX === 'undefined') {
+    showToast('Excel库加载中，请稍后重试', 'error');
+    return;
+  }
+  const [year, month] = appData.currentMonth.split('-').map(Number);
+  const daysInMonth = new Date(year, month, 0).getDate();
+  const staff = appData.staff;
+
+  if (staff.length === 0 || Object.keys(appData.schedule).length === 0) {
+    showToast('没有排班数据可导出', 'error');
+    return;
+  }
+
+  // Build data rows
+  const weekdays = ['日','一','二','三','四','五','六'];
+  const header = ['姓名', '组别'];
+  for (let d = 1; d <= daysInMonth; d++) {
+    const dateStr = `${year}-${String(month).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const wd = weekdays[new Date(dateStr).getDay()];
+    header.push(`${d}日(${wd})`);
+  }
+  header.push('合计天数');
+
+  const rows = [header];
+  staff.forEach(person => {
+    const row = [person.name, person.group + '组'];
+    let total = 0;
+    for (let d = 1; d <= daysInMonth; d++) {
+      const dateStr = `${year}-${String(month).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+      const dayData = appData.schedule[dateStr];
+      if (dayData && dayData[person.id] !== undefined) {
+        total++;
+        const sv = dayData[person.id];
+        if (appData.config.mode === '24h') {
+          row.push('值班');
+        } else if (Array.isArray(sv)) {
+          row.push(sv.map(si => appData.config.shifts[si]?.name || `班${si}`).join('/'));
+        }
+      } else {
+        row.push('');
+      }
+    }
+    row.push(total);
+    rows.push(row);
+  });
+
+  const ws = XLSX.utils.aoa_to_sheet(rows);
+  // Set column widths
+  ws['!cols'] = [{ wch: 8 }, { wch: 6 }];
+  for (let d = 0; d < daysInMonth; d++) ws['!cols'].push({ wch: 10 });
+  ws['!cols'].push({ wch: 8 });
+
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, `${year}年${month}月排班`);
+  XLSX.writeFile(wb, `排班表_${year}年${month}月.xlsx`);
+  showToast('Excel已导出！', 'success');
+}
+
+// ==================== Color Settings ====================
+function renderColorSettings() {
+  const container = document.getElementById('colorSettingsContent');
+  if (!container) return;
+  const mode = appData.config.mode;
+  const count = mode === '24h' ? 1 : appData.config.shiftCount;
+  const labels = mode === '24h' ? ['值班'] : (appData.config.shifts || []).map((s,i) => s.name || `班次${i+1}`);
+  let html = '<div style="display:flex;flex-wrap:wrap;gap:12px;">';
+  for (let i = 0; i < count; i++) {
+    html += `<div style="display:flex;align-items:center;gap:6px;">
+      <input type="color" id="shiftColor${i}" value="${COLORS[i]}" onchange="updateShiftColor(${i},this.value)" style="width:36px;height:28px;border:1px solid var(--border);border-radius:4px;cursor:pointer;">
+      <span style="font-size:12px;">${labels[i] || '班次'+(i+1)}</span>
+    </div>`;
+  }
+  html += '</div>';
+  html += '<button class="btn btn-outline btn-xs" style="margin-top:8px;" onclick="resetColors()">恢复默认</button>';
+  container.innerHTML = html;
+}
+
+function updateShiftColor(idx, color) {
+  COLORS[idx] = color;
+  // Update CSS dynamically
+  updateDynamicStyles();
+  saveData();
+  renderCalendar();
+}
+
+function resetColors() {
+  const defaults = ['#4A90D9','#52C41A','#FAAD14','#FF4D4F','#722ED1','#13C2C2'];
+  defaults.forEach((c, i) => COLORS[i] = c);
+  updateDynamicStyles();
+  renderColorSettings();
+  renderCalendar();
+  showToast('颜色已恢复默认', 'success');
+}
+
+function updateDynamicStyles() {
+  let styleEl = document.getElementById('dynamicShiftStyles');
+  if (!styleEl) {
+    styleEl = document.createElement('style');
+    styleEl.id = 'dynamicShiftStyles';
+    document.head.appendChild(styleEl);
+  }
+  let css = '';
+  for (let i = 0; i < 6; i++) {
+    css += `.shift-tag.s${i} { background: ${COLORS[i]} !important; }`;
+    css += `.shift-cell.s${i} { background: ${COLORS[i]} !important; }`;
+  }
+  styleEl.textContent = css;
+}
+
+// ==================== Tab Switching ====================
+function switchTab(tabName) {
+  document.querySelectorAll('.tab').forEach((t, i) => {
+    const names = ['config','schedule','table','swap'];
+    t.classList.toggle('active', names[i] === tabName);
+  });
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('panel-' + tabName).classList.add('active');
+
+  if (tabName === 'schedule') { renderCalendar(); renderStats(); }
+  if (tabName === 'table') renderTableView();
+  if (tabName === 'swap') { updateSwapStaffOptions(); renderSwapRecords(); }
+  if (tabName === 'config') { renderStats(); updateRotationPreview(); }
+}
+
+// ==================== Fairness Stats ====================
+function renderStats() {
+  const card = document.getElementById('statsCard');
+  const content = document.getElementById('statsContent');
+  if (Object.keys(appData.schedule).length === 0) {
+    card.style.display = 'none';
+    return;
+  }
+  card.style.display = 'block';
+
+  // Only count current month
+  const [curYear, curMonth] = appData.currentMonth.split('-').map(Number);
+  const monthPrefix = `${curYear}-${String(curMonth).padStart(2,'0')}`;
+
+  const stats = {};
+  appData.staff.forEach(s => { stats[s.id] = { name: s.name, group: s.group, workDays: 0, shifts: {} }; });
+
+  Object.keys(appData.schedule).forEach(dateStr => {
+    // Filter: only current month
+    if (!dateStr.startsWith(monthPrefix)) return;
+    const dayData = appData.schedule[dateStr];
+    Object.keys(dayData).forEach(staffId => {
+      if (stats[staffId]) {
+        stats[staffId].workDays++;
+        const sv = dayData[staffId];
+        if (Array.isArray(sv)) {
+          sv.forEach(si => { stats[staffId].shifts[si] = (stats[staffId].shifts[si] || 0) + 1; });
+        } else {
+          stats[staffId].shifts[0] = (stats[staffId].shifts[0] || 0) + 1;
+        }
+      }
+    });
+  });
+
+  const mode = appData.config.mode;
+  let html = `<div style="margin-bottom:8px;font-size:13px;color:var(--text-light);">📅 当前统计月份：<strong>${curYear}年${curMonth}月</strong></div>`;
+  html += '<table style="width:100%;border-collapse:collapse;font-size:13px;">';
+  html += '<tr style="background:#FAFAFA;"><th style="padding:8px;text-align:left;border:1px solid var(--border);">姓名</th>';
+  html += '<th style="padding:8px;border:1px solid var(--border);">组</th>';
+  html += '<th style="padding:8px;border:1px solid var(--border);">工作天数</th>';
+  if (mode === 'split') {
+    (appData.config.shifts || []).forEach((s, i) => {
+      html += `<th style="padding:8px;border:1px solid var(--border);">${s.name}天数</th>`;
+    });
+  }
+  html += '</tr>';
+
+  const vals = Object.values(stats);
+  const minDays = Math.min(...vals.map(v => v.workDays));
+  const maxDays = Math.max(...vals.map(v => v.workDays));
+
+  vals.forEach(s => {
+    const isMin = s.workDays === minDays;
+    const isMax = s.workDays === maxDays;
+    const bg = isMin ? 'var(--warning-light)' : 'transparent';
+    html += `<tr style="background:${bg};"><td style="padding:8px;border:1px solid var(--border);font-weight:500;">${s.name}</td>`;
+    html += `<td style="padding:8px;border:1px solid var(--border);text-align:center;">${s.group}</td>`;
+    html += `<td style="padding:8px;border:1px solid var(--border);text-align:center;font-weight:600;${isMin?'color:var(--warning);':''}${isMax?'color:var(--primary);':''}">${s.workDays}天</td>`;
+    if (mode === 'split') {
+      (appData.config.shifts || []).forEach((shift, si) => {
+        html += `<td style="padding:8px;border:1px solid var(--border);text-align:center;">${s.shifts[si] || 0}天</td>`;
+      });
+    }
+    html += '</tr>';
+  });
+
+  html += '</table>';
+  if (maxDays - minDays > 0) {
+    html += `<div style="margin-top:8px;font-size:12px;color:var(--warning);">⚠️ 差异：最多 ${maxDays} 天，最少 ${minDays} 天，差距 ${maxDays - minDays} 天</div>`;
+  } else {
+    html += `<div style="margin-top:8px;font-size:12px;color:var(--success);">✅ 完美均衡！每人工作天数相同</div>`;
+  }
+  content.innerHTML = html;
+}
+
+// ==================== Init ====================
+function initUI() {
+  // Restore config UI state
+  selectMode(appData.config.mode);
+  if (appData.config.mode === 'split') {
+    selectShiftCount(appData.config.shiftCount);
+    updateShiftTimeConfig();
+    // Restore shift values
+    setTimeout(() => {
+      const names = document.querySelectorAll('.shift-name-input');
+      const starts = document.querySelectorAll('.shift-start-input');
+      const ends = document.querySelectorAll('.shift-end-input');
+      (appData.config.shifts || []).forEach((s, i) => {
+        if (names[i]) names[i].value = s.name;
+        if (starts[i]) starts[i].value = s.start;
+        if (ends[i]) ends[i].value = s.end;
+      });
+    }, 50);
+  }
+  if (appData.config.dailyNeed) {
+    document.getElementById('dailyNeed').value = appData.config.dailyNeed;
+  }
+  if (appData.config.rotationDays) {
+    document.getElementById('rotationDays').value = appData.config.rotationDays;
+  }
+  if (appData.config.startDate) {
+    document.getElementById('startDate').value = appData.config.startDate;
+  }
+  updateRotationPreview();
+
+  renderColorSettings();
+  updateDynamicStyles();
+  renderStaffList();
+  updateSwapStaffOptions();
+  renderCalendar();
+  renderSwapRecords();
+}
+
+// Load data and init
+loadData();
+document.addEventListener('DOMContentLoaded', initUI);
+// In case DOM is already loaded
+if (document.readyState !== 'loading') initUI();
+</script>
+</body>
+</html>
