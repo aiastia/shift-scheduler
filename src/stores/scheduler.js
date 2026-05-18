@@ -17,6 +17,7 @@ export const useSchedulerStore = defineStore('scheduler', () => {
     dailyNeed: 1,
     rotationDays: 15,
     startDate: '',
+    daysToGenerate: 30,
   })
   const schedule = ref({})
   const leaveRecords = ref({})
@@ -97,9 +98,7 @@ export const useSchedulerStore = defineStore('scheduler', () => {
     const groupKeys = Object.keys(groups).sort()
 
     const start = new Date(config.startDate + 'T00:00:00')
-    const end = new Date(start)
-    end.setMonth(end.getMonth() + 3)
-    const totalDays = Math.ceil((end - start) / (1000 * 60 * 60 * 24))
+    const totalDays = config.daysToGenerate || 30
     const newSchedule = {}
 
     for (let d = 0; d < totalDays; d++) {

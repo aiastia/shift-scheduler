@@ -86,6 +86,10 @@
           <input type="number" v-model.number="store.config.rotationDays" min="1" max="90" style="width:100px;">
         </div>
         <div class="form-group">
+          <label>生成天数</label>
+          <input type="number" v-model.number="store.config.daysToGenerate" min="1" max="365" style="width:100px;">
+        </div>
+        <div class="form-group">
           <label>排班起始日期</label>
           <input type="date" v-model="store.config.startDate">
         </div>
