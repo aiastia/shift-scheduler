@@ -13,6 +13,7 @@ export const useSchedulerStore = defineStore('scheduler', () => {
     shifts: [
       { name: '白班', start: '08:00', end: '16:00' },
       { name: '夜班', start: '16:00', end: '08:00' },
+      { name: '夜班', start: '00:00', end: '08:00' },
     ],
     dailyNeed: 1,
     rotationDays: 15,

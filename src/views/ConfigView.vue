@@ -50,10 +50,10 @@
         <div class="form-group">
           <label>班次划分</label>
           <div class="radio-group">
-            <div class="radio-item" :class="{ selected: store.config.shiftCount === 2 }" @click="store.config.shiftCount = 2; store.save()">
+            <div class="radio-item" :class="{ selected: store.config.shiftCount === 2 }" @click="setShiftCount(2)">
               <span>2班制</span><span style="font-size:11px;color:var(--text-light);">白班+夜班</span>
             </div>
-            <div class="radio-item" :class="{ selected: store.config.shiftCount === 3 }" @click="store.config.shiftCount = 3; store.save()">
+            <div class="radio-item" :class="{ selected: store.config.shiftCount === 3 }" @click="setShiftCount(3)">
               <span>3班制</span><span style="font-size:11px;color:var(--text-light);">白班+中班+夜班</span>
             </div>
           </div>
@@ -126,19 +126,33 @@ const store = useSchedulerStore()
 const staffName = ref('')
 const staffGroup = ref('A')
 
-const shiftDefaults = [
-  { name: '白班', start: '08:00', end: '16:00' },
-  { name: '中班', start: '16:00', end: '00:00' },
-  { name: '夜班', start: '00:00', end: '08:00' },
-]
+const shiftPresets = {
+  2: [
+    { name: '白班', start: '08:00', end: '20:00' },
+    { name: '夜班', start: '20:00', end: '08:00' },
+  ],
+  3: [
+    { name: '白班', start: '08:00', end: '16:00' },
+    { name: '中班', start: '16:00', end: '00:00' },
+    { name: '夜班', start: '00:00', end: '08:00' },
+  ],
+}
 
-// Ensure shifts array has enough elements
+function setShiftCount(count) {
+  store.config.shiftCount = count
+  store.config.shifts = shiftPresets[count].map(s => ({ ...s }))
+  store.save()
+}
+
 const activeShifts = computed(() => {
-  while (store.config.shifts.length < store.config.shiftCount) {
+  const count = store.config.shiftCount
+  // If shifts array is too short, fill with presets
+  const preset = shiftPresets[count] || []
+  while (store.config.shifts.length < count) {
     const i = store.config.shifts.length
-    store.config.shifts.push({ ...(shiftDefaults[i] || { name: `班次${i+1}`, start: '00:00', end: '00:00' }) })
+    store.config.shifts.push(preset[i] ? { ...preset[i] } : { name: `班次${i+1}`, start: '00:00', end: '00:00' })
   }
-  return store.config.shifts.slice(0, store.config.shiftCount)
+  return store.config.shifts.slice(0, count)
 })
 
 const groupedStaff = computed(() => store.getGroups())
