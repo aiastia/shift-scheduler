@@ -58,12 +58,12 @@
             </div>
           </div>
         </div>
-        <div v-for="(shift, i) in shiftDefaults.slice(0, store.config.shiftCount)" :key="i" class="form-row" style="margin-bottom:8px;align-items:center;">
+        <div v-for="(shift, i) in activeShifts" :key="i" class="form-row" style="margin-bottom:8px;align-items:center;">
           <span style="font-size:13px;font-weight:500;min-width:60px;">班次{{ i + 1 }}</span>
-          <input v-model="store.config.shifts[i].name" style="width:80px;padding:4px 8px;border:1px solid var(--border);border-radius:4px;font-size:13px;">
-          <input type="time" v-model="store.config.shifts[i].start" style="width:100px;padding:4px 8px;border:1px solid var(--border);border-radius:4px;font-size:13px;">
+          <input v-model="activeShifts[i].name" style="width:80px;padding:4px 8px;border:1px solid var(--border);border-radius:4px;font-size:13px;">
+          <input type="time" v-model="activeShifts[i].start" style="width:100px;padding:4px 8px;border:1px solid var(--border);border-radius:4px;font-size:13px;">
           <span style="font-size:12px;">至</span>
-          <input type="time" v-model="store.config.shifts[i].end" style="width:100px;padding:4px 8px;border:1px solid var(--border);border-radius:4px;font-size:13px;">
+          <input type="time" v-model="activeShifts[i].end" style="width:100px;padding:4px 8px;border:1px solid var(--border);border-radius:4px;font-size:13px;">
         </div>
       </div>
     </div>
@@ -127,6 +127,15 @@ const shiftDefaults = [
   { name: '中班', start: '16:00', end: '00:00' },
   { name: '夜班', start: '00:00', end: '08:00' },
 ]
+
+// Ensure shifts array has enough elements
+const activeShifts = computed(() => {
+  while (store.config.shifts.length < store.config.shiftCount) {
+    const i = store.config.shifts.length
+    store.config.shifts.push({ ...(shiftDefaults[i] || { name: `班次${i+1}`, start: '00:00', end: '00:00' }) })
+  }
+  return store.config.shifts.slice(0, store.config.shiftCount)
+})
 
 const groupedStaff = computed(() => store.getGroups())
 const colorCount = computed(() => store.config.mode === '24h' ? 1 : store.config.shiftCount)
