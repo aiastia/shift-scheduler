@@ -192,6 +192,7 @@ body {
 .empty-state .icon { font-size: 48px; margin-bottom: 12px; }
 
 /* Print */
+@page { margin: 10mm; }
 @media print {
   .header, .tabs, .calendar-header .btn, .no-print, .modal-overlay { display: none !important; }
   body { background: white; }
@@ -199,8 +200,7 @@ body {
   .card { box-shadow: none; border: 1px solid #ddd; page-break-inside: avoid; }
   .calendar-table td { min-height: auto; }
   .schedule-table th { background: #eee !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-  .shift-cell, .shift-tag, .leave-tag { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-  @page { size: landscape; margin: 10mm; }
+  .shift-cell, .shift-tag, .leave-tag, .legend-dot { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 }
 
 /* Responsive */

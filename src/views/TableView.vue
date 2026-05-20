@@ -112,5 +112,42 @@ function doExport() {
   if (!store.exportExcel()) alert('导出失败，请确认已安装xlsx库')
 }
 
-function print() { window.print() }
+function print() {
+  // 测量表格实际宽度，计算缩放比例适配横向打印
+  const tableView = document.querySelector('.table-view')
+  const table = document.querySelector('.schedule-table')
+  if (!tableView || !table) { window.print(); return }
+
+  const tableWidth = table.scrollWidth
+  // A4 横向可打印宽度约 277mm ≈ 1046px (96dpi)
+  const pageWidth = 1040
+  const scale = tableWidth > pageWidth ? pageWidth / tableWidth : 1
+
+  const style = document.createElement('style')
+  style.id = 'print-landscape-style'
+  style.textContent = `
+    @page { size: landscape; margin: 8mm; }
+    @media print {
+      .card { padding: 4px !important; border: none !important; box-shadow: none !important; }
+      .calendar-header { margin-bottom: 4px !important; }
+      .calendar-header .calendar-nav h3 { font-size: 14px !important; }
+      .calendar-header .btn { display: none !important; }
+      .table-view { overflow: visible !important; }
+      .table-view .schedule-table {
+        transform: scale(${scale});
+        transform-origin: top left;
+        width: ${tableWidth}px !important;
+      }
+      .schedule-table th, .schedule-table td { padding: 3px 2px !important; border-width: 0.5px !important; font-size: 10px !important; }
+      .name-col { min-width: auto !important; padding-left: 4px !important; white-space: nowrap; }
+      .shift-cell { font-size: 9px !important; padding: 1px 3px !important; margin: 0 !important; }
+    }
+  `
+  document.head.appendChild(style)
+  window.print()
+  setTimeout(() => {
+    const el = document.getElementById('print-landscape-style')
+    if (el) el.remove()
+  }, 1000)
+}
 </script>

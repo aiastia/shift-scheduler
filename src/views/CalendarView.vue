@@ -52,7 +52,7 @@
     </div>
 
     <!-- Stats -->
-    <div v-if="hasSchedule" class="card">
+    <div v-if="hasSchedule" class="card no-print">
       <div class="card-title">📊 公平性统计（按月）</div>
       <div v-html="statsHtml"></div>
     </div>

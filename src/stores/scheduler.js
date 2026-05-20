@@ -295,7 +295,7 @@ export const useSchedulerStore = defineStore('scheduler', () => {
 
   // Data export/import
   function exportData() {
-    const blob = new Blob([JSON.stringify({ staff, config, schedule, leaveRecords, swapRecords, currentMonth, colors }, null, 2)], { type: 'application/json' })
+    const blob = new Blob([JSON.stringify({ staff: staff.value, config: { ...config }, schedule: schedule.value, leaveRecords: leaveRecords.value, swapRecords: swapRecords.value, currentMonth: currentMonth.value, colors: colors.value }, null, 2)], { type: 'application/json' })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
